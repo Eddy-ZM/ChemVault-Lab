@@ -1,0 +1,30 @@
+name = "chemvault-lab"
+compatibility_date = "2026-07-07"
+pages_build_output_dir = "dist"
+
+[vars]
+AI_PROVIDER = "deepseek"
+DEEPSEEK_BASE_URL = "https://api.deepseek.com"
+DEEPSEEK_MODEL = "deepseek-v4-flash"
+APP_BASE_URL = "https://lab.chemvault.science"
+USER_SYSTEM_URL = "https://user.chemvault.science"
+USER_SYSTEM_PROFILE_ENDPOINT = "/api/auth/handoff/verify"
+USER_SYSTEM_REQUIRED_SERVICE = "chemvault-lab"
+OCR_PROVIDER = "cloudflare"
+NODE_ENV = "production"
+
+[ai]
+binding = "AI"
+
+# Cloudflare Pages custom domain target:
+#   lab.chemvault.science -> chemvault-lab Pages project
+# Keep .dev.vars for local APP_BASE_URL overrides.
+
+[[d1_databases]]
+binding = "LAB_DB"
+database_name = "chemvault-lab"
+database_id = "a611dfb8-6813-4514-9cf6-537f9a656217"
+
+[[r2_buckets]]
+binding = "LAB_BUCKET"
+bucket_name = "chemvault-lab"

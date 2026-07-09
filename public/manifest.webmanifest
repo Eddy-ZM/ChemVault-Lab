@@ -1,0 +1,19 @@
+{
+  "name": "ChemVault Lab",
+  "short_name": "LabVault",
+  "description": "Lab notebook, handout, raw data, reaction, and Excel extraction workspace.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6f8fb",
+  "theme_color": "#155eef",
+  "icons": [
+    {
+      "src": "/assets/chemvault-logo-mark.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "productivity", "science"]
+}
