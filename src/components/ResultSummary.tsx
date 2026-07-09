@@ -1,4 +1,5 @@
-import { AlertTriangle, Download, FlaskConical, Table2 } from "lucide-react";
+import { AlertTriangle, Download, FlaskConical, RefreshCw, Table2 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { downloadAnalysisArtifact, downloadRemoteArtifact } from "../export/download";
 import type { ArtifactFormat, StoredAnalysisRecord } from "../files/types";
 
@@ -38,11 +39,30 @@ export function ResultSummary({ record }: ResultSummaryProps) {
             <AlertTriangle size={20} />
             Source extraction needs attention
           </h2>
-          <div className="warning-row">
-            <strong>{sourceDiagnostics[0].type}</strong>
-            <p>{sourceDiagnostics[0].message}</p>
-            <span>{sourceDiagnostics[0].severity}</span>
+          <div className="diagnostic-help">
+            <strong>What this means</strong>
+            <p>
+              If this result was opened from history, it may be an older saved analysis and will not be reprocessed
+              automatically. Re-upload text-readable PDFs to run the current parser. Scanned notebook photos or image-only
+              PDFs still need OCR before structured chemicals, steps, and raw tables can be extracted.
+            </p>
+            <div className="diagnostic-actions">
+              <Link className="button primary" to="/analyse">
+                <RefreshCw size={16} />
+                Re-run analysis
+              </Link>
+              <Link className="button secondary" to="/documents">
+                Manage saved records
+              </Link>
+            </div>
           </div>
+          {sourceDiagnostics.map((warning) => (
+            <div className="warning-row" key={`${warning.type}-${warning.message}`}>
+              <strong>{formatWarningType(warning.type)}</strong>
+              <p>{warning.message}</p>
+              <span>{warning.severity}</span>
+            </div>
+          ))}
         </section>
       )}
 
@@ -210,6 +230,13 @@ function DownloadButton({ label, format, record }: { label: string; format: Arti
 function replaceExtension(filename: string, format: ArtifactFormat) {
   const extension = format === "xlsx" ? ".xlsx" : format === "json" ? ".json" : format === "markdown" ? ".md" : ".tex";
   return filename.replace(/\.xlsx$/, extension);
+}
+
+function formatWarningType(type: string) {
+  return type
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 function Metric({ label, value }: { label: string; value: string }) {

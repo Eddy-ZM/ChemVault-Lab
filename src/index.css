@@ -1359,6 +1359,31 @@ td {
   color: var(--amber);
 }
 
+.diagnostic-help {
+  display: grid;
+  gap: 10px;
+  border: 1px solid color-mix(in srgb, var(--amber) 22%, var(--line));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 86%, var(--amber));
+  padding: 14px;
+}
+
+.diagnostic-help strong {
+  color: var(--text);
+}
+
+.diagnostic-help p {
+  color: var(--muted);
+  line-height: 1.65;
+  max-width: 980px;
+}
+
+.diagnostic-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .workflow-panel {
   display: flex;
   flex-wrap: wrap;
