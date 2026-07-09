@@ -378,17 +378,15 @@ function normalizeConfidence(value: string, fallback: string): LabAnalysis["expe
 }
 
 function addSourceDiagnostics(analysis: LabAnalysis, blocks: ParsedDocumentBlock[]): LabAnalysis {
-  const unreadableFiles = Array.from(
-    new Set(
-      blocks
-        .filter((block) => !hasReadableExtractedText(block))
-        .map((block) => block.source_file),
-    ),
-  );
+  const unreadableBlocks = blocks.filter((block) => !hasReadableExtractedText(block));
+  const unreadableFiles = Array.from(new Set(unreadableBlocks.map((block) => block.source_file)));
 
   if (unreadableFiles.length === 0) return analysis;
 
-  const warningMessage = `No readable text was extracted from ${unreadableFiles.join(", ")}. These files are likely scanned PDFs, notebook photos, or image-only documents and require a configured OCR provider before chemicals, procedure steps, and raw data can be extracted.`;
+  const ocrWasAttempted = unreadableBlocks.some((block) => typeof block.metadata.provider === "string" && /ocr/i.test(block.metadata.provider));
+  const warningMessage = ocrWasAttempted
+    ? `OCR was attempted for ${unreadableFiles.join(", ")}, but no reliable readable text was returned. Use a text-readable PDF/DOCX/CSV/XLSX source when possible, or upload a higher-resolution scan before extracting chemicals, procedure steps, and raw data.`
+    : `No readable text was extracted from ${unreadableFiles.join(", ")}. These files are likely scanned PDFs, notebook photos, or image-only documents and require a configured OCR provider before chemicals, procedure steps, and raw data can be extracted.`;
   const hasWarning = analysis.warnings.some((warning) => warning.type === "ocr_required" && warning.message === warningMessage);
   const hasMissingItem = analysis.missing_data.some((item) => item.item === "Readable source text / OCR");
 
@@ -400,7 +398,9 @@ function addSourceDiagnostics(analysis: LabAnalysis, blocks: ParsedDocumentBlock
           {
             item: "Readable source text / OCR",
             why_it_matters: "The uploaded file did not provide extractable text, so AI cannot read chemicals, steps, or tables.",
-            suggested_user_check: "Upload a text-readable PDF/DOCX/CSV/XLSX version or configure cloud OCR for scanned PDFs and photos.",
+            suggested_user_check: ocrWasAttempted
+              ? "Upload a text-readable source file or a clearer scan/photo, then run the analysis again."
+              : "Upload a text-readable PDF/DOCX/CSV/XLSX version or configure cloud OCR for scanned PDFs and photos.",
             severity: "high",
           },
           ...analysis.missing_data,
