@@ -4,7 +4,7 @@ import { clearSession, getStoredUser, startUserSystemLogin, type LabUser } from 
 import { clearAnalysisHistory } from "../storage/history";
 import { clearWorkspaceRecordCache } from "../storage/workspaceRecords";
 
-const deleteConfirmationText = "Comfirm";
+const deleteConfirmationText = "Confirm";
 
 export function SettingsPage() {
   const [user, setUser] = useState<LabUser | null>(() => getStoredUser());

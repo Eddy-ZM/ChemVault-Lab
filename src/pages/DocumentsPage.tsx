@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import type { StoredAnalysisRecord } from "../files/types";
 import { deleteWorkspaceRecord, loadWorkspaceRecords, type WorkspaceRecordSource } from "../storage/workspaceRecords";
 
-const deleteConfirmationText = "Comfirm";
+const deleteConfirmationText = "Confirm";
 
 export function DocumentsPage() {
   const [records, setRecords] = useState<StoredAnalysisRecord[]>([]);

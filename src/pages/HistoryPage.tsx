@@ -5,7 +5,7 @@ import { clearAnalysisHistory, listAnalysisHistory } from "../storage/history";
 import { clearWorkspaceRecordCache, loadWorkspaceRecords } from "../storage/workspaceRecords";
 import { useEffect, useState } from "react";
 
-const deleteConfirmationText = "Comfirm";
+const deleteConfirmationText = "Confirm";
 
 export function HistoryPage() {
   const [records, setRecords] = useState(() => listAnalysisHistory());
