@@ -28,6 +28,7 @@ describe("ChemVault Lab MVP pipeline", () => {
   afterEach(() => {
     localStorage.clear();
     sessionStorage.clear();
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -202,6 +203,38 @@ describe("ChemVault Lab MVP pipeline", () => {
     expect(result.analysis.experiment_summary.detected_reaction).toBe("Not a reaction-centred experiment");
     expect(result.analysis.raw_data.tables[0].columns).toContain("Rf");
     expect(result.analysis.experiment_summary.notes.join(" ")).toContain("Reaction field normalized");
+  });
+
+  it("runs independent AI stages concurrently", async () => {
+    let activeRequests = 0;
+    let peakRequests = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_input, init) => {
+        activeRequests += 1;
+        peakRequests = Math.max(peakRequests, activeRequests);
+        const body = JSON.parse(String(init?.body || "{}"));
+        const user = JSON.parse(body.messages?.[1]?.content || "{}");
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        activeRequests -= 1;
+
+        return Response.json({
+          choices: [{ message: { content: JSON.stringify(user.fallback_shape) } }],
+        });
+      }),
+    );
+    const file = textFile(
+      "parallel-stages.txt",
+      "Titration notebook. Trial 1 initial burette 0.10 mL final burette 24.80 mL.",
+      "text/plain",
+    );
+
+    await analyseLabFiles([file], baseOptions, {
+      AI_PROVIDER: "deepseek",
+      DEEPSEEK_API_KEY: "test-key",
+    });
+
+    expect(peakRequests).toBeGreaterThanOrEqual(2);
   });
 
   it("normalizes AI-only column chromatography labels back into the stable schema", async () => {

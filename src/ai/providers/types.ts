@@ -19,6 +19,7 @@ export interface AIProviderEnv {
   DEEPSEEK_API_KEY?: string;
   DEEPSEEK_BASE_URL?: string;
   DEEPSEEK_MODEL?: string;
+  AI_STAGE_TIMEOUT_MS?: string;
   OPENAI_API_KEY?: string;
   LOCAL_AI_ENDPOINT?: string;
   OCR_PROVIDER?: string;

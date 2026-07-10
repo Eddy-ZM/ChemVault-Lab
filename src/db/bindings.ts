@@ -4,6 +4,7 @@ export interface ChemVaultLabBindings {
   DEEPSEEK_API_KEY?: string;
   DEEPSEEK_BASE_URL?: string;
   DEEPSEEK_MODEL?: string;
+  AI_STAGE_TIMEOUT_MS?: string;
   OPENAI_API_KEY?: string;
   LAB_BUCKET?: R2Bucket;
   LAB_DB?: D1Database;

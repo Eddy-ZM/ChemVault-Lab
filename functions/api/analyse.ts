@@ -23,6 +23,7 @@ export const onRequestPost: PagesFunction<ChemVaultLabBindings> = async ({ reque
       DEEPSEEK_API_KEY: env.DEEPSEEK_API_KEY,
       DEEPSEEK_BASE_URL: env.DEEPSEEK_BASE_URL,
       DEEPSEEK_MODEL: env.DEEPSEEK_MODEL,
+      AI_STAGE_TIMEOUT_MS: env.AI_STAGE_TIMEOUT_MS,
       OPENAI_API_KEY: env.OPENAI_API_KEY,
       AI: env.AI,
       OCR_PROVIDER: env.OCR_PROVIDER,

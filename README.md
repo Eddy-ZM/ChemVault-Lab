@@ -36,6 +36,7 @@ AI_PROVIDER=deepseek
 DEEPSEEK_API_KEY=
 DEEPSEEK_BASE_URL=https://api.deepseek.com
 DEEPSEEK_MODEL=deepseek-v4-flash
+AI_STAGE_TIMEOUT_MS=15000
 OPENAI_API_KEY=
 LOCAL_AI_ENDPOINT=
 STORAGE_BUCKET=
@@ -284,6 +285,7 @@ The `AI` binding enables Cloudflare Workers AI Markdown Conversion for scanned P
    - `DEEPSEEK_API_KEY`
    - `DEEPSEEK_BASE_URL`
    - `DEEPSEEK_MODEL`
+   - `AI_STAGE_TIMEOUT_MS` (optional, defaults to 15000 ms)
    - `JWT_SECRET`
    - `LAB_ACCESS_CODE`
    - `USER_SYSTEM_URL`

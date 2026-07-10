@@ -45,67 +45,66 @@ export async function analyseLabFiles(
     `${readableBlockCount}/${parsedBlocks.length} block(s) with readable text`,
   );
 
-  const classification = await runProviderStage(
-    provider,
-    "classify_uploaded_documents",
-    parsedBlocks,
-    "Classify each uploaded file as lab notebook, experiment handout, raw data, image requiring OCR, or mixed/unknown.",
-    classifyDocuments(parsedBlocks),
-  );
-  updateStage(stages, "document_type_detected", "complete", `${classification.documents.length} document block(s) classified`);
-
   const experimentFallback = detectExperiment(parsedBlocks, options);
-  const experiment = reconcileExperimentDetection(
-    experimentFallback,
-    await runProviderStage(
+  const [classification, experimentCandidate] = await Promise.all([
+    runProviderStage(
+      provider,
+      "classify_uploaded_documents",
+      parsedBlocks,
+      "Classify each uploaded file as lab notebook, experiment handout, raw data, image requiring OCR, or mixed/unknown.",
+      classifyDocuments(parsedBlocks),
+    ),
+    runProviderStage(
       provider,
       "detect_experiment",
       parsedBlocks,
       "Detect experiment title, experiment type, aim, and confidence. Use one allowed experiment type.",
       experimentFallback,
     ),
-  );
+  ]);
+  updateStage(stages, "document_type_detected", "complete", `${classification.documents.length} document block(s) classified`);
+
+  const experiment = reconcileExperimentDetection(experimentFallback, experimentCandidate);
   updateStage(stages, "experiment_detected", "complete", experiment.experiment_type);
 
   const reactionFallback = detectReaction(parsedBlocks, experiment.experiment_type);
-  const reaction = normalizeReactionDetection(
-    await runProviderStage(
+  const reactionTableFallback = extractChemicals(parsedBlocks);
+  const rawDataFallback = extractRawData(parsedBlocks, experiment.experiment_type);
+  const [reactionCandidate, chemicalStageResult, rawDataStageResult] = await Promise.all([
+    runProviderStage(
       provider,
       "detect_reaction",
       parsedBlocks,
       "Detect reaction name, reaction class, confidence, alternative possibilities, and uncertainty reason.",
       reactionFallback,
     ),
-    reactionFallback,
-  );
-  updateStage(stages, "reaction_detected", reaction.reaction_confidence === "low" ? "warning" : "complete", reaction.detected_reaction);
-
-  let analysis = buildBaseAnalysis(parsedBlocks, options, experiment, reaction);
-
-  const reactionTableFallback = extractChemicals(parsedBlocks);
-  const chemicalStageRows = pickArrayStageResult(
-    await runProviderStage(
+    runProviderStage(
       provider,
       "extract_chemicals",
       parsedBlocks,
       "Extract chemicals, quantities, roles, units, hazards if explicitly present, and source references. Do not infer absent quantities.",
       reactionTableFallback,
     ),
-    ["reaction_table", "chemicals", "items", "rows"],
-    reactionTableFallback,
-  );
-  analysis.reaction_table = chemicalStageRows.length > 0 ? chemicalStageRows : reactionTableFallback;
-  const rawDataFallback = extractRawData(parsedBlocks, experiment.experiment_type);
-  analysis.raw_data = pickRawDataStageResult(
-    await runProviderStage(
+    runProviderStage(
       provider,
       "extract_raw_data",
       parsedBlocks,
       "Extract raw data tables from parsed tables and text evidence. Preserve original columns when possible.",
       rawDataFallback,
     ),
-    rawDataFallback,
+  ]);
+  const reaction = normalizeReactionDetection(reactionCandidate, reactionFallback);
+  updateStage(stages, "reaction_detected", reaction.reaction_confidence === "low" ? "warning" : "complete", reaction.detected_reaction);
+
+  let analysis = buildBaseAnalysis(parsedBlocks, options, experiment, reaction);
+
+  const chemicalStageRows = pickArrayStageResult(
+    chemicalStageResult,
+    ["reaction_table", "chemicals", "items", "rows"],
+    reactionTableFallback,
   );
+  analysis.reaction_table = chemicalStageRows.length > 0 ? chemicalStageRows : reactionTableFallback;
+  analysis.raw_data = pickRawDataStageResult(rawDataStageResult, rawDataFallback);
   const calculationsFallback = identifyCalculations(analysis);
   analysis.calculations = pickArrayStageResult(
     await runProviderStage(
@@ -197,7 +196,8 @@ async function runProviderStage<T>(
       },
       fallback,
     );
-  } catch {
+  } catch (error) {
+    console.warn(`AI stage ${stage} used deterministic fallback`, error instanceof Error ? error.message : error);
     return fallback;
   }
 }
