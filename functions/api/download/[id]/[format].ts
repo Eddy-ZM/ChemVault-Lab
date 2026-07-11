@@ -2,6 +2,7 @@ import { verifySessionToken, getBearerToken } from "../../../../src/auth/jwt";
 import type { ChemVaultLabBindings } from "../../../../src/db/bindings";
 import { generateExcelWorkbook } from "../../../../src/excel/workbook";
 import { generateLatexSummary } from "../../../../src/export/latex";
+import { recordProductEvent } from "../../../../src/analytics/events";
 import { getPersistedAnalysis } from "../../../../src/storage/serverStore";
 
 export const onRequestGet: PagesFunction<ChemVaultLabBindings> = async ({ request, params, env }) => {
@@ -18,6 +19,14 @@ export const onRequestGet: PagesFunction<ChemVaultLabBindings> = async ({ reques
       },
       { status: 404 },
     );
+  }
+
+  if (["json", "markdown", "md", "latex", "tex", "xlsx"].includes(format)) {
+    await recordProductEvent(env, {
+      eventName: "export_downloaded",
+      subjectId: session?.sub,
+      properties: { format: format === "md" ? "markdown" : format === "tex" ? "latex" : format },
+    });
   }
 
   if (format === "json") {

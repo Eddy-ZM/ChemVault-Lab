@@ -198,6 +198,89 @@ export async function deletePersistedAnalysis(env: ChemVaultLabBindings, id: str
   return true;
 }
 
+export async function exportPersistedUserData(env: ChemVaultLabBindings, ownerId: string) {
+  if (!env.LAB_DB) {
+    return { analyses: [], files: [], artifactInventory: [], contentIncluded: false };
+  }
+
+  const [analyses, files] = await Promise.all([
+    env.LAB_DB.prepare(
+      `SELECT id, created_at, experiment_title, experiment_type, file_count, status, excel_filename,
+              analysis_json, markdown, artifact_keys_json
+       FROM lab_analyses WHERE owner_id = ? ORDER BY created_at DESC`,
+    )
+      .bind(ownerId)
+      .all<LabAnalysisRow>(),
+    env.LAB_DB.prepare(
+      `SELECT id, analysis_id, file_name, file_type, file_size, storage_key, created_at
+       FROM lab_files WHERE owner_id = ? ORDER BY created_at DESC`,
+    )
+      .bind(ownerId)
+      .all<LabFileRow>(),
+  ]);
+
+  const artifactInventory = analyses.results.flatMap((row) =>
+    Object.entries(parseArtifactKeys(row.artifact_keys_json)).map(([format, key]) => ({ analysisId: row.id, format, key })),
+  );
+
+  return {
+    analyses: analyses.results.map((row) => ({
+      id: row.id,
+      createdAt: row.created_at,
+      experimentTitle: row.experiment_title,
+      experimentType: row.experiment_type,
+      fileCount: row.file_count,
+      status: row.status,
+      excelFilename: row.excel_filename,
+      analysis: JSON.parse(row.analysis_json),
+      markdown: row.markdown,
+    })),
+    files: files.results.map((row) => ({
+      id: row.id,
+      analysisId: row.analysis_id,
+      fileName: row.file_name,
+      fileType: row.file_type,
+      fileSize: row.file_size,
+      createdAt: row.created_at,
+    })),
+    artifactInventory,
+    contentIncluded: false,
+  };
+}
+
+export async function deleteAllPersistedUserData(env: ChemVaultLabBindings, ownerId: string) {
+  if (!env.LAB_DB) throw new Error("Lab database is not configured.");
+
+  const analyses = await env.LAB_DB.prepare(
+    "SELECT id, artifact_keys_json FROM lab_analyses WHERE owner_id = ?",
+  )
+    .bind(ownerId)
+    .all<Pick<LabAnalysisRow, "id" | "artifact_keys_json">>();
+  const keys = new Set<string>();
+  if (env.LAB_BUCKET) {
+    for (const row of analyses.results) {
+      for (const key of await collectArtifactKeys(env.LAB_BUCKET, parseArtifactKeys(row.artifact_keys_json))) {
+        keys.add(key);
+      }
+    }
+  }
+
+  const files = await env.LAB_DB.prepare("DELETE FROM lab_files WHERE owner_id = ?").bind(ownerId).run();
+  const records = await env.LAB_DB.prepare("DELETE FROM lab_analyses WHERE owner_id = ?").bind(ownerId).run();
+  if (env.LAB_BUCKET && keys.size > 0) {
+    const keyList = [...keys];
+    for (let offset = 0; offset < keyList.length; offset += 1000) {
+      await env.LAB_BUCKET.delete(keyList.slice(offset, offset + 1000));
+    }
+  }
+
+  return {
+    analysesDeleted: Number(records.meta.changes || 0),
+    fileRecordsDeleted: Number(files.meta.changes || 0),
+    artifactsDeleted: keys.size,
+  };
+}
+
 async function rowToStored(row: LabAnalysisRow, env: ChemVaultLabBindings): Promise<ServerStoredAnalysis> {
   const artifactKeys = JSON.parse(row.artifact_keys_json || "{}") as Record<string, string>;
   const analysis = JSON.parse(row.analysis_json);
@@ -266,4 +349,15 @@ interface LabAnalysisRow {
   analysis_json: string;
   markdown: string;
   artifact_keys_json: string;
+}
+
+interface LabFileRow {
+  id: string;
+  analysis_id: string;
+  owner_id: string;
+  file_name: string;
+  file_type: string;
+  file_size: number;
+  storage_key: string | null;
+  created_at: string;
 }

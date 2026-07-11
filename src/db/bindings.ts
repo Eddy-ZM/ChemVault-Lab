@@ -18,6 +18,13 @@ export interface ChemVaultLabBindings {
   USER_SYSTEM_CLIENT_ID?: string;
   USER_SYSTEM_CLIENT_SECRET?: string;
   USER_SYSTEM_REQUIRED_SERVICE?: string;
+  LIFECYCLE_SERVICE_SECRET?: string;
+  FILES_SERVICE_ORIGIN?: string;
+  FILES_LAB_HANDOFF_SECRET?: string;
+  FILES_ARTIFACT_WRITE_SECRET?: string;
+  NOTIFICATIONS_EVENT_URL?: string;
+  EVENT_DELIVERY_SECRET?: string;
+  ANALYTICS_HASH_SALT?: string;
   OCR_PROVIDER?: string;
   OCR_API_KEY?: string;
   OCR_ENDPOINT?: string;

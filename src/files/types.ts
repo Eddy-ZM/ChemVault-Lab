@@ -34,6 +34,7 @@ export interface AnalysisUserOptions {
   generateJson: boolean;
   generateMarkdown: boolean;
   generateLatex: boolean;
+  sourceFileId?: string;
 }
 
 export interface LabFileLike {

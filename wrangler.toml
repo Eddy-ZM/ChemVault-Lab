@@ -10,8 +10,16 @@ APP_BASE_URL = "https://lab.chemvault.science"
 USER_SYSTEM_URL = "https://user.chemvault.science"
 USER_SYSTEM_PROFILE_ENDPOINT = "/api/auth/handoff/verify"
 USER_SYSTEM_REQUIRED_SERVICE = "chemvault-lab"
+FILES_SERVICE_ORIGIN = "https://file.chemvault.science"
+NOTIFICATIONS_EVENT_URL = "https://notify.chemvault.science/api/internal/events"
 OCR_PROVIDER = "cloudflare"
 NODE_ENV = "production"
+
+# Configure the same dedicated secret in User Center and every lifecycle service:
+# wrangler pages secret put LIFECYCLE_SERVICE_SECRET --project-name chemvault-lab
+# wrangler pages secret put FILES_LAB_HANDOFF_SECRET --project-name chemvault-lab
+# wrangler pages secret put EVENT_DELIVERY_SECRET --project-name chemvault-lab
+# wrangler pages secret put ANALYTICS_HASH_SALT --project-name chemvault-lab
 
 [ai]
 binding = "AI"

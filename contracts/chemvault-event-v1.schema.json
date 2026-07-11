@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://docs.chemvault.science/contracts/chemvault-event-v1.schema.json",
+  "title": "ChemVault cross-service event envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["specVersion", "id", "type", "source", "subject", "time", "user", "data"],
+  "properties": {
+    "specVersion": { "const": "1.0" },
+    "id": { "type": "string", "minLength": 1 },
+    "type": {
+      "enum": [
+        "files.file.ready",
+        "lab.analysis.started",
+        "lab.analysis.completed",
+        "lab.analysis.failed"
+      ]
+    },
+    "source": { "enum": ["chemvault-files", "chemvault-lab"] },
+    "subject": { "type": "string", "minLength": 1 },
+    "time": { "type": "string", "format": "date-time" },
+    "user": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 }
+      }
+    },
+    "data": { "type": "object" }
+  }
+}

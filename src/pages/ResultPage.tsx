@@ -2,6 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ResultSummary } from "../components/ResultSummary";
+import { trackProductEvent } from "../analytics/client";
 import type { StoredAnalysisRecord } from "../files/types";
 import { findWorkspaceRecord, getCachedWorkspaceRecords } from "../storage/workspaceRecords";
 
@@ -18,6 +19,10 @@ export function ResultPage() {
     }
     void findWorkspaceRecord(id).then(setRecord);
   }, [id]);
+
+  useEffect(() => {
+    if (record?.id) trackProductEvent("result_viewed", { source: "result" });
+  }, [record?.id]);
 
   if (record === undefined) {
     return (

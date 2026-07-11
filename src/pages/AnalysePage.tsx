@@ -1,14 +1,15 @@
 import { AlertTriangle, CheckCircle2, Circle, Loader2, Play, RotateCcw } from "lucide-react";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ProgressTracker } from "../components/ProgressTracker";
 import { UploadDropzone } from "../components/UploadDropzone";
 import type { AnalysisStageStatus, AnalysisUserOptions, OutputLanguage, UploadIntent } from "../files/types";
 import { runAnalysis } from "../services/analysisClient";
 import { saveAnalysisToHistory } from "../storage/history";
 import { visibleStageLabels } from "../analysis/stages";
-import { enableGuestMode, getStoredUser, hasGuestMode } from "../auth/client";
+import { enableGuestMode, fetchWithAuth, getStoredUser, hasGuestMode } from "../auth/client";
 import { AuthChoiceDialog } from "../components/AuthChoiceDialog";
+import { trackProductEvent } from "../analytics/client";
 
 const uploadIntents: UploadIntent[] = [
   "Auto detect",
@@ -43,7 +44,10 @@ const outputFormats = [
 
 export function AnalysePage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const importAttempted = useRef(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [importingFile, setImportingFile] = useState(false);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
   const [showAuthChoice, setShowAuthChoice] = useState(false);
@@ -61,6 +65,40 @@ export function AnalysePage() {
     generateLatex: true,
   });
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const fileId = params.get("filesFileId");
+    if (!fileId || importAttempted.current) return;
+    if (!getStoredUser()) {
+      setError("Sign in to Lab to import this file from ChemVault Files.");
+      setShowAuthChoice(true);
+      return;
+    }
+
+    importAttempted.current = true;
+    setImportingFile(true);
+    setError("");
+    trackProductEvent("files_import_started", { source: "files" });
+    void fetchWithAuth(`/api/import/files/${encodeURIComponent(fileId)}`)
+      .then(async (response) => {
+        if (!response.ok) {
+          const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+          throw new Error(payload?.error || `File import failed (${response.status}).`);
+        }
+        const blob = await response.blob();
+        const suggestedName = params.get("fileName") || fileNameFromDisposition(response.headers.get("content-disposition"));
+        setFiles((current) => [new File([blob], suggestedName || "chemvault-file", { type: blob.type }), ...current]);
+        setOptions((current) => ({ ...current, sourceFileId: fileId }));
+        trackProductEvent("files_import_completed", { source: "files", mimeType: blob.type || "unknown" });
+      })
+      .catch((caught) => {
+        importAttempted.current = false;
+        trackProductEvent("files_import_failed", { source: "files" });
+        setError(caught instanceof Error ? caught.message : "File import failed.");
+      })
+      .finally(() => setImportingFile(false));
+  }, [location.search]);
+
   async function submit({ allowAnonymous = false } = {}) {
     if (files.length === 0) {
       setError("Upload at least one file before starting analysis.");
@@ -75,6 +113,10 @@ export function AnalysePage() {
     setError("");
     setShowAuthChoice(false);
     setStages(visibleStageLabels.map((stage, index) => ({ ...stage, status: index === 0 ? "running" : "pending" })));
+    trackProductEvent("analysis_started", {
+      fileCount: files.length,
+      source: new URLSearchParams(location.search).get("source") || "direct",
+    });
 
     try {
       const result = await runAnalysis(files, options);
@@ -82,6 +124,7 @@ export function AnalysePage() {
       saveAnalysisToHistory(result, result.remote);
       navigate(`/result/${result.id}`);
     } catch (caught) {
+      trackProductEvent("analysis_failed", { fileCount: files.length });
       setError(caught instanceof Error ? caught.message : "Analysis failed.");
       setStages((current) => current.map((stage) => (stage.status === "running" ? { ...stage, status: "error" } : stage)));
     } finally {
@@ -102,6 +145,7 @@ export function AnalysePage() {
       <div className="analysis-layout">
         <form className="analysis-form" onSubmit={(event) => event.preventDefault()}>
           <UploadDropzone files={files} onFilesChange={setFiles} />
+          {importingFile && <p className="form-note" role="status">Importing the selected ChemVault Files object…</p>}
 
           <fieldset>
             <legend>Handout handling</legend>
@@ -200,7 +244,7 @@ export function AnalysePage() {
             <AuthChoiceDialog
               open={showAuthChoice}
               mode="panel"
-              next="/analyse"
+              next={`${location.pathname}${location.search}`}
               onClose={() => setShowAuthChoice(false)}
               onContinueGuest={() => {
                 enableGuestMode();
@@ -219,6 +263,7 @@ export function AnalysePage() {
               type="button"
               onClick={() => {
                 setFiles([]);
+                setOptions((current) => ({ ...current, sourceFileId: undefined }));
                 setError("");
                 setShowAuthChoice(false);
                 setStages(visibleStageLabels);
@@ -235,6 +280,19 @@ export function AnalysePage() {
       </div>
     </div>
   );
+}
+
+function fileNameFromDisposition(value: string | null): string | null {
+  if (!value) return null;
+  const encoded = value.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded);
+    } catch {
+      return encoded;
+    }
+  }
+  return value.match(/filename="?([^";]+)"?/i)?.[1] || null;
 }
 
 function AnalysisLoadingOverlay({ stages, fileCount }: { stages: AnalysisStageStatus[]; fileCount: number }) {
