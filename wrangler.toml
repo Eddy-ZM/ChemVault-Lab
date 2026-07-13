@@ -14,12 +14,20 @@ FILES_SERVICE_ORIGIN = "https://file.chemvault.science"
 NOTIFICATIONS_EVENT_URL = "https://notify.chemvault.science/api/internal/events"
 OCR_PROVIDER = "cloudflare"
 NODE_ENV = "production"
+BILLING_API_ORIGIN = "https://chemvault.science"
+BILLING_ENFORCEMENT_MODE = "shadow"
+ANALYSIS_FREE_DAILY_LIMIT = "3"
+ANALYSIS_PRO_DAILY_LIMIT = "50"
+ANALYSIS_TEAM_DAILY_LIMIT = "250"
+ANALYSIS_ENTERPRISE_DAILY_LIMIT = "1000"
 
 # Configure the same dedicated secret in User Center and every lifecycle service:
 # wrangler pages secret put LIFECYCLE_SERVICE_SECRET --project-name chemvault-lab
 # wrangler pages secret put FILES_LAB_HANDOFF_SECRET --project-name chemvault-lab
 # wrangler pages secret put EVENT_DELIVERY_SECRET --project-name chemvault-lab
 # wrangler pages secret put ANALYTICS_HASH_SALT --project-name chemvault-lab
+# wrangler pages secret put BILLING_SERVICE_SECRET --project-name chemvault-lab
+# After the main billing endpoint and shared secret pass canaries, set BILLING_ENFORCEMENT_MODE to "enforce".
 
 [ai]
 binding = "AI"

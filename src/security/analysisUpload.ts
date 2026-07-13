@@ -1,11 +1,16 @@
 import { requireSession } from "../auth/jwt";
 import type { ChemVaultLabBindings } from "../db/bindings";
+import {
+  analysisLimitsForPlan,
+  BillingEntitlementError,
+  resolveBillingEntitlements,
+  type AnalysisPlanLimits,
+} from "./billingEntitlements";
 
 export const ANALYSIS_MAX_FILES = 12;
 export const ANALYSIS_MAX_FILE_BYTES = 20 * 1024 * 1024;
 export const ANALYSIS_MAX_TOTAL_BYTES = 50 * 1024 * 1024;
 export const ANALYSIS_MAX_REQUEST_BYTES = 55 * 1024 * 1024;
-export const ANALYSIS_REQUESTS_PER_MINUTE = 5;
 
 type VerifiedSession = NonNullable<Awaited<ReturnType<typeof requireSession>>>;
 
@@ -33,18 +38,31 @@ export async function authorizeAnalysisUpload(
     return rejected("ChemVault Lab storage is temporarily unavailable. No files were accepted.", 503, session);
   }
 
+  let limits: AnalysisPlanLimits;
+  try {
+    const privileged = session.provider === "lab-local" && env.LAB_LOCAL_BILLING_BYPASS?.trim().toLowerCase() === "true";
+    const billing = await resolveBillingEntitlements(env, session.sub, { privileged });
+    limits = analysisLimitsForPlan(billing.plan, env);
+  } catch (error) {
+    if (error instanceof BillingEntitlementError) return rejected(error.message, error.status, session, {}, error.code);
+    return rejected("Billing entitlement service is unavailable.", 503, session, {}, "BILLING_UNAVAILABLE");
+  }
+
   const declaredLength = Number(request.headers.get("content-length") || 0);
   if (Number.isFinite(declaredLength) && declaredLength > ANALYSIS_MAX_REQUEST_BYTES) {
     return rejected("The upload request exceeds the 55 MB limit.", 413, session);
   }
 
-  const rateLimit = await consumeAnalysisRateLimit(env.LAB_DB, session.sub);
+  const rateLimit = await consumeAnalysisRateLimit(env.LAB_DB, session.sub, limits);
   if (!rateLimit.allowed) {
     return rejected(
-      `Analysis rate limit reached. Try again in ${rateLimit.retryAfterSeconds} seconds.`,
+      rateLimit.scope === "daily"
+        ? "Daily analysis quota reached for this plan. Upgrade the plan or try again tomorrow."
+        : `Analysis rate limit reached. Try again in ${rateLimit.retryAfterSeconds} seconds.`,
       429,
       session,
       { "Retry-After": String(rateLimit.retryAfterSeconds) },
+      rateLimit.scope === "daily" ? "ANALYSIS_DAILY_QUOTA_EXCEEDED" : "ANALYSIS_RATE_LIMITED",
     );
   }
 
@@ -74,9 +92,35 @@ export function analysisMinuteBucket(now = Date.now()) {
   return new Date(Math.floor(now / 60_000) * 60_000).toISOString();
 }
 
-async function consumeAnalysisRateLimit(db: D1Database, ownerId: string, now = Date.now()) {
+export function analysisDayBucket(now = Date.now()) {
+  const date = new Date(now);
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())).toISOString();
+}
+
+export async function consumeAnalysisRateLimit(db: D1Database, ownerId: string, limits: AnalysisPlanLimits, now = Date.now()) {
   const windowStart = analysisMinuteBucket(now);
-  const key = `${ownerId}:${windowStart}`;
+  const minuteCount = await incrementUsageBucket(db, `${ownerId}:minute:${windowStart}`, ownerId, windowStart);
+  const minuteRetry = Math.max(1, 60 - Math.floor((now % 60_000) / 1000));
+  if (minuteCount > limits.perMinute) return { allowed: false, scope: "minute" as const, retryAfterSeconds: minuteRetry };
+
+  const dayStart = analysisDayBucket(now);
+  const dayCount = await incrementUsageBucket(db, `${ownerId}:day:${dayStart}`, ownerId, dayStart);
+  await db
+    .prepare("DELETE FROM lab_analysis_rate_limits WHERE window_start < ?")
+    .bind(new Date(now - 31 * 24 * 60 * 60 * 1000).toISOString())
+    .run();
+  if (dayCount > limits.perDay) {
+    const nextDay = Date.parse(dayStart) + 24 * 60 * 60 * 1000;
+    return { allowed: false, scope: "daily" as const, retryAfterSeconds: Math.max(1, Math.ceil((nextDay - now) / 1000)) };
+  }
+  return {
+    allowed: true,
+    scope: null,
+    retryAfterSeconds: 0,
+  };
+}
+
+async function incrementUsageBucket(db: D1Database, id: string, ownerId: string, windowStart: string) {
   const row = await db
     .prepare(
       `INSERT INTO lab_analysis_rate_limits (id, owner_id, window_start, request_count)
@@ -84,17 +128,9 @@ async function consumeAnalysisRateLimit(db: D1Database, ownerId: string, now = D
        ON CONFLICT(id) DO UPDATE SET request_count = request_count + 1
        RETURNING request_count`,
     )
-    .bind(key, ownerId, windowStart)
+    .bind(id, ownerId, windowStart)
     .first<{ request_count: number }>();
-  await db
-    .prepare("DELETE FROM lab_analysis_rate_limits WHERE window_start < ?")
-    .bind(new Date(now - 24 * 60 * 60 * 1000).toISOString())
-    .run();
-  const requestCount = Number(row?.request_count || 1);
-  return {
-    allowed: requestCount <= ANALYSIS_REQUESTS_PER_MINUTE,
-    retryAfterSeconds: Math.max(1, 60 - Math.floor((now % 60_000) / 1000)),
-  };
+  return Number(row?.request_count || 1);
 }
 
 function rejected(
@@ -102,9 +138,10 @@ function rejected(
   status: number,
   session: VerifiedSession | null = null,
   headers: HeadersInit = {},
+  code = "ANALYSIS_UPLOAD_REJECTED",
 ): RejectedAnalysisUpload {
   return {
-    error: Response.json({ error: message }, { status, headers: { "Cache-Control": "no-store", ...headers } }),
+    error: Response.json({ error: message, code }, { status, headers: { "Cache-Control": "no-store", ...headers } }),
     session,
     form: null,
     files: [],

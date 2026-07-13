@@ -9,6 +9,7 @@
 | Lifecycle | Export/delete requires service authority and repeated deletion is safe | `tests/lifecycle.test.ts` | CI required |
 | Analytics | Only allowlisted, privacy-minimized properties are accepted | `tests/product-analytics.test.ts` | CI required |
 | Upload authorization and limits | Anonymous access, excessive count/size, and invalid rate buckets are rejected before analysis | `tests/analysis-security.test.ts` | CI required |
+| Billing and cost control | Production fails closed, echoed user is verified, plan quotas are mapped, minute and daily D1 buckets are atomic | `tests/billing-entitlements.test.ts` | CI required |
 | Owner scope and compatibility | Server functions derive session ownership; legacy endpoints use Lab records | `tests/extract-cutover.test.ts`; TypeScript build | CI required |
 
 ## Proposed tests
@@ -22,6 +23,8 @@
 
 ## Gaps
 
+- Guarded live billing canaries must prove Free/Pro/Team quotas and invalid service-secret denial before paid launch.
+
 - The verified Cloudflare/GitHub scope contained no production Extract data plane; a separately managed legacy environment, if discovered later, still requires the documented census and retention procedure.
 - Workspace/team compatibility routes are intentionally informational until a canonical team entitlement model exists.
-- The local gate currently passes 38 tests plus `npm run lint` and `npm run build`; production provider, Files writeback, and lifecycle bindings still require guarded canaries.
+- The local gate passes the current Vitest suite plus `npm run lint` and `npm run build`; production billing, provider, Files writeback, and lifecycle bindings still require guarded canaries.

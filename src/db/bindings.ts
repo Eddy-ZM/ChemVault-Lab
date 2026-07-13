@@ -30,4 +30,12 @@ export interface ChemVaultLabBindings {
   OCR_ENDPOINT?: string;
   APP_BASE_URL?: string;
   NODE_ENV?: string;
+  BILLING_API_ORIGIN?: string;
+  BILLING_SERVICE_SECRET?: string;
+  BILLING_ENFORCEMENT_MODE?: string;
+  LAB_LOCAL_BILLING_BYPASS?: string;
+  ANALYSIS_FREE_DAILY_LIMIT?: string;
+  ANALYSIS_PRO_DAILY_LIMIT?: string;
+  ANALYSIS_TEAM_DAILY_LIMIT?: string;
+  ANALYSIS_ENTERPRISE_DAILY_LIMIT?: string;
 }

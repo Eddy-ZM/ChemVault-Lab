@@ -7,6 +7,7 @@ ChemVault Lab is the canonical successor to ChemVault Extract. The React/Vite br
 ## Identity and trust boundaries
 
 - Upload and analysis require a ChemVault User session. The server verifies it before reading multipart content and derives the owner from the verified session; client-supplied owner IDs are ignored.
+- The server resolves the owner's subscription from the main ChemVault billing authority before reading multipart content. Browser plan claims never set provider quotas.
 - Files handoff and artifact writeback use separate service credentials from the browser session.
 - AI/OCR keys, lifecycle credentials, analytics salts, and event-delivery credentials remain server-side.
 - Extract-compatible routes translate legacy contracts onto Lab-owned records; they do not proxy to the retired Extract backend.
@@ -15,6 +16,7 @@ ChemVault Lab is the canonical successor to ChemVault Extract. The React/Vite br
 
 - D1 and R2 bindings are required for durable authenticated operation; absence must not be presented as saved work.
 - Anonymous/local fallback analysis is intentionally disabled so provider, quota, and persistence failures remain visible.
+- Production commercial launch requires billing enforcement mode `enforce`; `shadow` exists only for the pre-launch rollout sequence.
 - Provider output is untrusted and remains reviewable before export or Files writeback.
 - Extract shutdown is complete only after public entry points redirect and legacy customer data has an explicit export/retention decision.
 
