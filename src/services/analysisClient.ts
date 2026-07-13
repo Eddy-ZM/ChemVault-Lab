@@ -1,4 +1,4 @@
-import type { AnalysisPipelineResult, AnalysisUserOptions, LabFileLike } from "../files/types";
+import type { AnalysisPipelineResult, AnalysisUserOptions } from "../files/types";
 import { fetchWithAuth } from "../auth/client";
 
 interface RemoteAnalyseResponse {
@@ -20,42 +20,36 @@ interface RemoteAnalyseResponse {
 }
 
 export async function runAnalysis(files: File[], options: AnalysisUserOptions): Promise<AnalysisPipelineResult & { remote: boolean }> {
-  const remote = await tryRemoteAnalysis(files, options);
-  if (remote) return { ...remote, remote: true };
-
-  const { analyseLabFiles } = await import("../analysis/pipeline");
-  const local = await analyseLabFiles(files as LabFileLike[], options, { AI_PROVIDER: "heuristic" });
-  return { ...local, remote: false };
+  const remote = await remoteAnalysis(files, options);
+  return { ...remote, remote: true };
 }
 
-async function tryRemoteAnalysis(files: File[], options: AnalysisUserOptions): Promise<AnalysisPipelineResult | null> {
-  try {
-    const form = new FormData();
-    files.forEach((file) => form.append("files", file));
-    form.append("metadata", JSON.stringify(options));
+async function remoteAnalysis(files: File[], options: AnalysisUserOptions): Promise<AnalysisPipelineResult> {
+  const form = new FormData();
+  files.forEach((file) => form.append("files", file));
+  form.append("metadata", JSON.stringify(options));
 
-    const response = await fetchWithAuth("/api/analyse", {
-      method: "POST",
-      body: form,
-    });
+  const response = await fetchWithAuth("/api/analyse", {
+    method: "POST",
+    body: form,
+  });
 
-    if (!response.ok) return null;
-    const payload = (await response.json()) as RemoteAnalyseResponse;
-
-    return {
-      id: payload.id,
-      filenameSlug: payload.excelFilename.replace(/^chemvault_lab_/, "").replace(/_\d{4}-\d{2}-\d{2}\.xlsx$/, ""),
-      createdAt: payload.createdAt,
-      fileCount: payload.fileCount,
-      parsedBlocks: [],
-      analysis: payload.analysis,
-      markdown: payload.markdown,
-      latex: payload.latex,
-      excelFilename: payload.excelFilename,
-      stages: payload.stages,
-      provider: payload.provider,
-    };
-  } catch {
-    return null;
+  const payload = (await response.json().catch(() => null)) as (RemoteAnalyseResponse & { error?: string; message?: string }) | null;
+  if (!response.ok || !payload) {
+    throw new Error(payload?.error || payload?.message || `Analysis request failed (${response.status}).`);
   }
+
+  return {
+    id: payload.id,
+    filenameSlug: payload.excelFilename.replace(/^chemvault_lab_/, "").replace(/_\d{4}-\d{2}-\d{2}\.xlsx$/, ""),
+    createdAt: payload.createdAt,
+    fileCount: payload.fileCount,
+    parsedBlocks: [],
+    analysis: payload.analysis,
+    markdown: payload.markdown,
+    latex: payload.latex,
+    excelFilename: payload.excelFilename,
+    stages: payload.stages,
+    provider: payload.provider,
+  };
 }

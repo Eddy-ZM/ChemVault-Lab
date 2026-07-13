@@ -1,30 +1,27 @@
 import { analyseLabFiles } from "../../src/analysis/pipeline";
-import { requireSession } from "../../src/auth/jwt";
 import type { ChemVaultLabBindings } from "../../src/db/bindings";
 import type { AnalysisUserOptions } from "../../src/files/types";
 import { persistAnalysis } from "../../src/storage/serverStore";
 import { deliverOutboxEvents, enqueueAnalysisCompletedEvent } from "../../src/events/outbox";
 import { recordProductEvent } from "../../src/analytics/events";
 import { publishAnalysisArtifactsToFiles } from "../../src/integrations/filesArtifacts";
+import { authorizeAnalysisUpload } from "../../src/security/analysisUpload";
 
 export const onRequestPost: PagesFunction<ChemVaultLabBindings> = async ({ request, env }) => {
   const requestStartedAt = Date.now();
   let analyticsSubjectId: string | null = null;
   let analyticsFileCount = 0;
   try {
-    const form = await request.formData();
-    const files = form.getAll("files").filter((value): value is File => value instanceof File);
-    if (files.length === 0) {
-      return Response.json({ error: "At least one file is required." }, { status: 400 });
-    }
+    const upload = await authorizeAnalysisUpload(request, env);
+    if (upload.error) return upload.error;
+    const { files, form, session } = upload;
     analyticsFileCount = files.length;
     const metadataRaw = String(form.get("metadata") || "{}");
     const metadata = parseMetadata(metadataRaw);
     if (!metadata) {
       return Response.json({ error: "metadata must be valid JSON." }, { status: 400 });
     }
-    const session = await requireSession(request, env);
-    analyticsSubjectId = session?.sub || null;
+    analyticsSubjectId = session.sub;
 
     const result = await analyseLabFiles(files, metadata, {
       AI_PROVIDER: env.AI_PROVIDER,
@@ -39,33 +36,29 @@ export const onRequestPost: PagesFunction<ChemVaultLabBindings> = async ({ reque
       OCR_ENDPOINT: env.OCR_ENDPOINT,
     });
 
-    await persistAnalysis(env, result, files, session?.sub || null);
-    const artifactWriteback = session?.sub
-      ? await publishAnalysisArtifactsToFiles({
-          env,
-          result,
-          options: metadata,
-          userId: session.sub,
-          userEmail: session.email,
-        })
-      : [];
-    if (session?.sub) {
-      await enqueueAnalysisCompletedEvent(env, result, session.sub);
-      await deliverOutboxEvents(env, 5);
-      await recordProductEvent(env, {
-        eventName: "analysis_completed",
-        subjectId: session.sub,
-        properties: {
-          fileCount: result.fileCount,
-          provider: result.provider,
-          source: metadata.sourceFileId ? "chemvault-files" : "direct",
-          artifactsWritten: artifactWriteback.filter((item) => item.status === "completed").length,
-          artifactWritebackFailures: artifactWriteback.filter((item) => item.status === "failed").length,
-          durationMs: Date.now() - requestStartedAt,
-        },
-        occurredAt: result.createdAt,
-      });
-    }
+    await persistAnalysis(env, result, files, session.sub);
+    const artifactWriteback = await publishAnalysisArtifactsToFiles({
+      env,
+      result,
+      options: metadata,
+      userId: session.sub,
+      userEmail: session.email,
+    });
+    await enqueueAnalysisCompletedEvent(env, result, session.sub);
+    await deliverOutboxEvents(env, 5);
+    await recordProductEvent(env, {
+      eventName: "analysis_completed",
+      subjectId: session.sub,
+      properties: {
+        fileCount: result.fileCount,
+        provider: result.provider,
+        source: metadata.sourceFileId ? "files" : "direct",
+        artifactsWritten: artifactWriteback.filter((item) => item.status === "completed").length,
+        artifactWritebackFailures: artifactWriteback.filter((item) => item.status === "failed").length,
+        durationMs: Date.now() - requestStartedAt,
+      },
+      occurredAt: result.createdAt,
+    });
 
     return Response.json({
       id: result.id,

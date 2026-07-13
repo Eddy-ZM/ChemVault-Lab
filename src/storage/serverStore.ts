@@ -22,6 +22,9 @@ export async function persistAnalysis(
   files: LabFileLike[],
   ownerId: string | null,
 ) {
+  if (ownerId && (!env.LAB_DB || !env.LAB_BUCKET)) {
+    throw new Error("Authenticated analysis persistence requires both the Lab database and storage bucket.");
+  }
   const owner = ownerId || "anonymous";
   const artifactKeys: Record<string, string> = {};
 

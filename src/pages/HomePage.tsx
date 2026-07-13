@@ -2,7 +2,7 @@ import { ArrowRight, ClipboardList, FileSpreadsheet, FlaskConical, UploadCloud }
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { enableGuestMode, getStoredUser } from "../auth/client";
+import { getStoredUser } from "../auth/client";
 import { AuthChoiceDialog } from "../components/AuthChoiceDialog";
 
 export function HomePage() {
@@ -107,11 +107,6 @@ export function HomePage() {
       <AuthChoiceDialog
         open={showAuthChoice}
         onClose={() => setShowAuthChoice(false)}
-        onContinueGuest={() => {
-          enableGuestMode();
-          setShowAuthChoice(false);
-          navigate("/analyse");
-        }}
         next="/analyse"
       />
     </div>

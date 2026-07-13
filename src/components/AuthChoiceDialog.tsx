@@ -6,12 +6,11 @@ import { useAnimatedPresence } from "../hooks/useAnimatedPresence";
 interface AuthChoiceDialogProps {
   open: boolean;
   onClose: () => void;
-  onContinueGuest: () => void;
   next?: string;
   mode?: "modal" | "panel";
 }
 
-export function AuthChoiceDialog({ open, onClose, onContinueGuest, next = "/analyse", mode = "modal" }: AuthChoiceDialogProps) {
+export function AuthChoiceDialog({ open, onClose, next = "/analyse", mode = "modal" }: AuthChoiceDialogProps) {
   const { mounted, state } = useAnimatedPresence(open, 180);
 
   useEffect(() => {
@@ -36,11 +35,8 @@ export function AuthChoiceDialog({ open, onClose, onContinueGuest, next = "/anal
       <div className="auth-choice-heading">
         <div>
           <span className="eyebrow">Before extraction</span>
-          <h2 id="auth-choice-title">Sign in before starting?</h2>
-          <p>
-            You can use ChemVault Lab either way. Signing in is better for saved workspace history; continuing without
-            sign-in is faster for one-off local work.
-          </p>
+          <h2 id="auth-choice-title">Sign in to start an analysis.</h2>
+          <p>ChemVault Lab requires an authenticated account before files can be selected, uploaded, or analysed.</p>
         </div>
         {mode === "modal" && (
           <button className="icon-button auth-choice-close" type="button" onClick={onClose} aria-label="Close sign-in choice">
@@ -50,20 +46,12 @@ export function AuthChoiceDialog({ open, onClose, onContinueGuest, next = "/anal
       </div>
       <div className="auth-choice-grid">
         <article>
-          <strong>Sign in first</strong>
-          <p>Private server history, authenticated downloads, and easier cross-device access.</p>
-          <span>Tradeoff: takes an extra step. Local file selections may need to be reselected after login.</span>
+          <strong>Continue with ChemVault User</strong>
+          <p>Uploads, analysis history, downloads, and usage limits remain attached to your verified account.</p>
+          <span>Files are not accepted until sign-in completes.</span>
           <button className="button primary" type="button" onClick={() => void startUserSystemLogin(next)}>
             <LogIn size={16} />
             Sign in
-          </button>
-        </article>
-        <article>
-          <strong>Continue without sign-in</strong>
-          <p>Fastest path for quick extraction, classroom demos, or temporary local work.</p>
-          <span>Tradeoff: history and downloads may stay local or temporary and are not tied to your account.</span>
-          <button className="button secondary" type="button" onClick={onContinueGuest}>
-            Continue once
           </button>
         </article>
       </div>

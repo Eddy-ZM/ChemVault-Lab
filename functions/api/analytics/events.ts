@@ -8,10 +8,10 @@ export const onRequestPost: PagesFunction<ChemVaultLabBindings> = async ({ reque
     return Response.json({ error: "Unsupported product event." }, { status: 400 });
   }
   const session = await requireSession(request, env);
+  if (!session) return Response.json({ error: "Authentication required." }, { status: 401 });
   const stored = await recordProductEvent(env, {
     eventName: body.eventName,
-    subjectId: session?.sub,
-    anonymousSessionId: typeof body.anonymousSessionId === "string" ? body.anonymousSessionId.slice(0, 128) : null,
+    subjectId: session.sub,
     properties: body.properties && typeof body.properties === "object" ? body.properties as Record<string, unknown> : {},
   });
   return Response.json({ accepted: true, stored }, { status: 202 });

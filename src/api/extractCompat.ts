@@ -3,6 +3,7 @@ import { requireSession, type LabSession } from "../auth/jwt";
 import type { ChemVaultLabBindings } from "../db/bindings";
 import type { AnalysisPipelineResult, AnalysisUserOptions, StoredAnalysisRecord } from "../files/types";
 import type { LabAnalysis, ReactionRow } from "../schemas/labSchema";
+import { authorizeAnalysisUpload } from "../security/analysisUpload";
 import { getPersistedAnalysis, listPersistedHistory, persistAnalysis } from "../storage/serverStore";
 
 type LabRecordsResult =
@@ -58,20 +59,9 @@ export async function requireLabRecord(request: Request, env: ChemVaultLabBindin
 }
 
 export async function analyseCompatUpload(request: Request, env: ChemVaultLabBindings): Promise<LabUploadResult> {
-  const session = await requireSession(request, env);
-  if (!session) return { error: authError(), session: null, result: null };
-
-  const form = await request.formData();
-  const files = form.getAll("files").filter((value): value is File => value instanceof File);
-  const singleFile = form.get("file");
-  if (singleFile instanceof File) files.push(singleFile);
-  if (files.length === 0) {
-    return {
-      error: Response.json({ error: "At least one file is required." }, { status: 400 }),
-      session,
-      result: null,
-    };
-  }
+  const upload = await authorizeAnalysisUpload(request, env);
+  if (upload.error) return { error: upload.error, session: upload.session, result: null };
+  const { session, form, files } = upload;
 
   const metadata = readAnalysisOptions(form);
   const result = await analyseLabFiles(files, metadata, {

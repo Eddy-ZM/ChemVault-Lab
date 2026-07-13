@@ -7,7 +7,7 @@ import type { AnalysisStageStatus, AnalysisUserOptions, OutputLanguage, UploadIn
 import { runAnalysis } from "../services/analysisClient";
 import { saveAnalysisToHistory } from "../storage/history";
 import { visibleStageLabels } from "../analysis/stages";
-import { enableGuestMode, fetchWithAuth, getStoredUser, hasGuestMode } from "../auth/client";
+import { fetchWithAuth, getStoredUser } from "../auth/client";
 import { AuthChoiceDialog } from "../components/AuthChoiceDialog";
 import { trackProductEvent } from "../analytics/client";
 
@@ -99,12 +99,12 @@ export function AnalysePage() {
       .finally(() => setImportingFile(false));
   }, [location.search]);
 
-  async function submit({ allowAnonymous = false } = {}) {
+  async function submit() {
     if (files.length === 0) {
       setError("Upload at least one file before starting analysis.");
       return;
     }
-    if (!allowAnonymous && !getStoredUser() && !hasGuestMode()) {
+    if (!getStoredUser()) {
       setError("");
       setShowAuthChoice(true);
       return;
@@ -130,6 +130,19 @@ export function AnalysePage() {
     } finally {
       setRunning(false);
     }
+  }
+
+  if (!getStoredUser()) {
+    return (
+      <div className="analyse-page site-container">
+        <section className="page-heading">
+          <span className="eyebrow">Authenticated upload</span>
+          <h1>Sign in before uploading lab records.</h1>
+          <p>Anonymous file selection, upload, and analysis are disabled.</p>
+        </section>
+        <AuthChoiceDialog open mode="panel" next={`${location.pathname}${location.search}`} onClose={() => undefined} />
+      </div>
+    );
   }
 
   return (
@@ -246,10 +259,6 @@ export function AnalysePage() {
               mode="panel"
               next={`${location.pathname}${location.search}`}
               onClose={() => setShowAuthChoice(false)}
-              onContinueGuest={() => {
-                enableGuestMode();
-                void submit({ allowAnonymous: true });
-              }}
             />
           )}
 

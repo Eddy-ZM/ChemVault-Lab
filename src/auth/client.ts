@@ -1,6 +1,5 @@
 const tokenKey = "chemvault_lab_token_v1";
 const userKey = "chemvault_lab_user_v1";
-const guestModeKey = "chemvault_lab_guest_mode_v1";
 
 export interface LabUser {
   id?: string;
@@ -30,13 +29,6 @@ export function clearSession() {
   window.dispatchEvent(new Event("chemvault-lab-auth-change"));
 }
 
-export function enableGuestMode() {
-  sessionStorage.setItem(guestModeKey, "1");
-}
-
-export function hasGuestMode() {
-  return sessionStorage.getItem(guestModeKey) === "1";
-}
 
 export async function login(name: string, accessCode: string) {
   const response = await fetch("/api/auth/login", {
