@@ -1,0 +1,233 @@
+@font-face {
+  font-family: "CV Inter";
+  src: url("/fonts/inter-400.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "CV Inter";
+  src: url("/fonts/inter-600.ttf") format("truetype");
+  font-weight: 600 800;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "CV Newsreader";
+  src: url("/fonts/newsreader-400.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "CV Newsreader";
+  src: url("/fonts/newsreader-500.ttf") format("truetype");
+  font-weight: 500 700;
+  font-display: swap;
+}
+
+:root {
+  --bg: #f4f1e9;
+  --surface: #fffdf8;
+  --surface-muted: #ece8df;
+  --text: #10203a;
+  --muted: #647084;
+  --line: #d8d2c7;
+  --line-strong: #b9b2a6;
+  --blue: #155eef;
+  --blue-dark: #0f4fd6;
+  --teal: #0e7490;
+  --green: #21865d;
+  --shadow: 0 18px 42px rgba(7, 17, 31, 0.08);
+  font-family: "CV Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+:root.dark {
+  --bg: #07111f;
+  --surface: #102238;
+  --surface-muted: #172d45;
+  --text: #f7f4ec;
+  --muted: #aebbc9;
+  --line: rgba(255, 255, 255, 0.14);
+  --line-strong: rgba(255, 255, 255, 0.28);
+  --blue: #75a2ff;
+  --blue-dark: #9bbaff;
+  --teal: #55d6e8;
+}
+
+body,
+.app-shell,
+main {
+  background: var(--bg);
+}
+
+h1,
+h2,
+h3,
+.page-heading h1,
+.hero-copy h1,
+.result-hero h1 {
+  font-family: "CV Newsreader", Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.018em;
+}
+
+.site-header {
+  min-height: 74px;
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+  background: rgba(7, 17, 31, 0.97);
+  box-shadow: none;
+}
+
+.nav-shell {
+  min-height: 74px;
+}
+
+.brand,
+.brand strong,
+.site-nav a {
+  color: #f7f4ec;
+}
+
+.brand small {
+  color: #91a1b2;
+}
+
+.brand-mark {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: #ffffff;
+  box-shadow: none;
+}
+
+.site-nav a {
+  border-radius: 8px;
+}
+
+.site-nav a.active,
+.site-nav a:hover,
+.site-nav a:focus-visible {
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+.site-nav a.active {
+  box-shadow: inset 0 -2px #55d6e8;
+}
+
+.site-header .icon-button,
+.site-header .login-chip {
+  border-color: rgba(255, 255, 255, 0.17);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f7f4ec;
+  box-shadow: none;
+}
+
+.hero-section {
+  min-height: 650px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  background-color: #07111f;
+}
+
+.hero-section::before {
+  background: rgba(7, 17, 31, 0.68);
+  opacity: 1;
+}
+
+.hero-section::after {
+  display: none;
+}
+
+.hero-copy h1,
+.hero-copy p,
+.hero-output-panel,
+.hero-output-panel strong {
+  color: #fffdf8;
+}
+
+.hero-copy p,
+.hero-output-panel span {
+  color: #b7c5d1;
+}
+
+.hero-output-panel .hero-auth-note {
+  border-color: rgba(85, 214, 232, 0.32);
+  background: rgba(85, 214, 232, 0.1);
+  color: #dffaff;
+}
+
+.hero-capabilities span,
+.hero-output-panel {
+  border-color: rgba(255, 255, 255, 0.17);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: none;
+}
+
+.hero-capabilities span {
+  color: #d8e1e9;
+}
+
+.workflow-card,
+.metric-card,
+.data-section,
+.analysis-form,
+.progress-panel,
+.empty-state,
+.output-preview,
+.workspace-action-card,
+.export-card,
+.settings-card,
+.info-card,
+.review-item,
+.analysis-loading-card {
+  border-color: var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: none;
+}
+
+.workflow-card:hover,
+.workspace-action-card:hover,
+.export-card:hover {
+  border-color: color-mix(in srgb, var(--blue) 45%, var(--line));
+  box-shadow: var(--shadow);
+}
+
+.button.primary,
+.upload-action {
+  border-color: #155eef;
+  background: #155eef;
+  color: #ffffff;
+}
+
+.button.secondary,
+.icon-button,
+.segmented-grid button,
+.segmented-row button {
+  border-color: var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: none;
+}
+
+.site-footer {
+  border-top-color: rgba(255, 255, 255, 0.12);
+  background: #07111f;
+  color: #aebbc9;
+}
+
+.site-footer strong,
+.site-footer a {
+  color: #fffdf8;
+}
+
+@media (max-width: 760px) {
+  .site-header,
+  .nav-shell {
+    min-height: 66px;
+  }
+
+  .hero-section {
+    min-height: auto;
+  }
+}

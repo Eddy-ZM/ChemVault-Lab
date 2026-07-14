@@ -28,8 +28,8 @@ export function HomePage() {
             <span className="eyebrow">ChemVault Lab</span>
             <h1>Lab notes to Excel, without the cleanup work.</h1>
             <p>
-              Upload notebooks, handouts, and raw data. ChemVault Lab detects the experiment and builds a structured
-              workbook for lab reports.
+              Sign in, then upload notebooks, handouts, and raw data. ChemVault Lab detects the experiment and builds a
+              structured workbook for lab reports.
             </p>
             <div className="hero-capabilities" aria-label="Key capabilities">
               <span>Document detection</span>
@@ -39,7 +39,7 @@ export function HomePage() {
             </div>
             <div className="hero-actions">
               <button className="button primary" type="button" onClick={startFromHome}>
-                Start extracting lab data
+                Sign in to analyse lab data
                 <ArrowRight size={18} />
               </button>
               <Link className="button secondary hero-secondary" to="/dashboard">
@@ -49,6 +49,7 @@ export function HomePage() {
           </div>
           <div className="hero-output-panel" aria-label="Excel output preview">
             <strong>Generated workbook</strong>
+            <span className="hero-auth-note">Authenticated upload required</span>
             <span>Experiment Summary</span>
             <span>Reaction Table</span>
             <span>Raw Data</span>
