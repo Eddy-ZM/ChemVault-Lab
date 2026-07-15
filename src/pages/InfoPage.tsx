@@ -88,7 +88,7 @@ const docs = {
     sections: [
       ["Base URL", "Use https://lab.chemvault.science/api."],
       ["Authentication", "The MVP uses ChemVault User System handoff or the local Lab access-code session in development."],
-      ["Compatibility", "Core document, search, database, review, export, usage, project, workspace, and batch endpoints return Lab-shaped data. Removed billing, webhook, and developer-key surfaces return 410 with a migration message."],
+      ["Compatibility", "Core document, search, review, export, usage, project, workspace, and batch endpoints are available through the Lab API."],
     ],
   },
   security: {
@@ -96,7 +96,7 @@ const docs = {
     description: "Security choices for Lab file processing and AI extraction.",
     sections: [
       ["Secrets", "Provider keys and JWT secrets are read from environment variables and are not hardcoded."],
-      ["Private uploads", "Uploaded files and generated outputs are not public assets. R2/D1 storage is scoped through the server API when configured."],
+      ["Private uploads", "Uploaded files and generated outputs stay private and are served only through authorized Lab sessions."],
       ["Safety", "Hazards can be summarized for awareness, but Lab does not provide instructions for bypassing lab safety rules."],
     ],
   },
@@ -290,14 +290,14 @@ function ContactInfo() {
 
 function PricingInfo() {
   const plans = [
-    ["MVP", "$0", "Local and authenticated Lab analysis for first-stage testing.", ["Notebook/handout/raw data upload", "Excel/JSON/Markdown/LaTeX export", "DeepSeek provider adapter", "Local or D1/R2 history"]],
+    ["Preview", "$0", "Local and authenticated Lab analysis for early workspace testing.", ["Notebook, handout, and raw data upload", "Excel, JSON, Markdown, and LaTeX export", "Configured analysis engine", "Local history with cloud sync when enabled"]],
     ["Student", "Planned", "For coursework and lab report preparation.", ["Higher monthly analyses", "Course-level history", "Export bundles", "User System identity"]],
     ["Researcher", "Planned", "For repeated analytical and synthesis record cleanup.", ["Batch upload", "Review queue", "Search database", "Provider configuration"]],
     ["Lab", "Planned", "For shared teaching or research labs.", ["Team workspace", "Members and roles", "Storage controls", "Admin usage reporting"]],
   ];
 
   return (
-    <InfoShell eyebrow="Pricing" title="Lab pricing is not enabled in the MVP." description="The old Extract billing pages are merged into Lab as placeholders. Stripe checkout and portal APIs intentionally return migration or disabled responses until billing is reintroduced.">
+    <InfoShell eyebrow="Pricing" title="Lab pricing is in preview." description="Current plans focus on Lab analysis workflows while billing and team administration are prepared for broader availability.">
       <div className="pricing-grid">
         {plans.map(([name, price, description, features]) => (
           <article className="pricing-card" key={name as string}>

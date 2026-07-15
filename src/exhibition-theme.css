@@ -221,13 +221,101 @@ h3,
   color: #fffdf8;
 }
 
+.brand,
+.site-nav a,
+.site-header .icon-button,
+.site-header .login-chip,
+.button,
+.upload-action,
+.icon-button,
+.segmented-grid button,
+.segmented-row button,
+.site-footer a,
+input,
+select,
+textarea {
+  min-width: 44px !important;
+  min-height: 44px !important;
+}
+
+.site-header button,
+.site-header .icon-button {
+  min-width: 44px !important;
+  min-height: 44px !important;
+}
+
 @media (max-width: 760px) {
   .site-header,
   .nav-shell {
     min-height: 66px;
   }
 
+  .nav-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    padding-block: 10px;
+  }
+
+  .site-nav {
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: calc(100vw - 32px);
+    justify-content: flex-start;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .site-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .site-nav a {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding-inline: 12px;
+  }
+
+  .site-header .login-chip {
+    max-width: 92px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .hero-section {
     min-height: auto;
   }
+}
+
+.site-nav a,
+.site-header a,
+.site-header button,
+.site-header .icon-button,
+.segmented-row button,
+.button,
+button,
+select,
+textarea,
+input:not([type="checkbox"]):not([type="radio"]),
+.info-card a,
+.info-shell a,
+.docs-list a,
+.docs-nav a,
+.site-footer a {
+  min-width: 46px !important;
+  min-height: 46px !important;
+}
+
+.site-nav a,
+.site-header a,
+.info-card a,
+.info-shell a,
+.docs-list a,
+.docs-nav a,
+.site-footer a {
+  display: inline-flex;
+  align-items: center;
 }

@@ -22,10 +22,9 @@ export function DashboardPage() {
       <section className="page-heading workspace-heading">
         <div>
           <span className="eyebrow">ChemVault Lab workspace</span>
-          <h1>Lab notebook extraction dashboard.</h1>
+          <h1>Lab analysis dashboard.</h1>
           <p>
-            A Lab-branded workspace that combines upload, document history, review, search, and export workflows from
-            the older app surface.
+            Review uploads, analysis history, structured outputs, and export readiness from one focused Lab workspace.
           </p>
         </div>
         <Link className="button primary" to="/analyse">

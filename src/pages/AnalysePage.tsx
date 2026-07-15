@@ -151,8 +151,8 @@ export function AnalysePage() {
 
       <section className="page-heading">
         <span className="eyebrow">Upload analysis</span>
-        <h1>Extract structured data from lab records.</h1>
-        <p>Upload related notebook, handout, and raw data files together. Unknown values remain Missing or null.</p>
+        <h1>Analyze lab records into structured data.</h1>
+        <p>Upload notebooks, handouts, and raw data together. Lab keeps uncertain values clearly marked for review.</p>
       </section>
 
       <div className="analysis-layout">
@@ -265,7 +265,7 @@ export function AnalysePage() {
           <div className="form-actions">
             <button className="button primary" type="button" onClick={() => void submit()} disabled={running}>
               <Play size={17} />
-              {running ? "Analysing" : "Start extraction"}
+              {running ? "Analyzing" : "Start analysis"}
             </button>
             <button
               className="button secondary"
@@ -319,7 +319,7 @@ function AnalysisLoadingOverlay({ stages, fileCount }: { stages: AnalysisStageSt
           </span>
           <div>
             <span className="eyebrow">ChemVault Lab is working</span>
-            <h2>Analysing uploaded lab records.</h2>
+            <h2>Analyzing uploaded lab records.</h2>
             <p>
               Processing {fileCount} file{fileCount === 1 ? "" : "s"}. Keep this window open while Lab extracts text,
               detects the experiment, and prepares the export files.

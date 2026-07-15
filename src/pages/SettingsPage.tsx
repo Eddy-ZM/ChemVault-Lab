@@ -22,7 +22,7 @@ export function SettingsPage() {
       <section className="page-heading">
         <span className="eyebrow">Settings</span>
         <h1>ChemVault Lab settings.</h1>
-        <p>User System identity, Lab session state, local history, and provider configuration are kept separate from Extract.</p>
+        <p>Manage identity, session preferences, local history, and analysis defaults for your Lab workspace.</p>
       </section>
 
       <section className="settings-grid">
@@ -59,9 +59,9 @@ export function SettingsPage() {
           <h2>Processing</h2>
           <p>AI provider, OCR provider, storage, and database bindings are configured through environment variables.</p>
           <div className="settings-list">
-            <span>AI provider: DeepSeek adapter by default</span>
-            <span>OCR: basic placeholder or cloud adapter</span>
-            <span>Storage: local fallback, R2/D1 when configured</span>
+            <span>Analysis engine: configured workspace default</span>
+            <span>OCR: document text recognition when available</span>
+            <span>Storage: local history with cloud sync when enabled</span>
           </div>
         </article>
 
