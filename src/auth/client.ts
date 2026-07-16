@@ -14,7 +14,14 @@ export function getStoredToken() {
 
 export function getStoredUser(): LabUser | null {
   const raw = localStorage.getItem(userKey);
-  return raw ? (JSON.parse(raw) as LabUser) : null;
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as LabUser;
+  } catch {
+    localStorage.removeItem(userKey);
+    localStorage.removeItem(tokenKey);
+    return null;
+  }
 }
 
 export function storeSession(token: string, user: LabUser) {
@@ -36,7 +43,7 @@ export async function login(name: string, accessCode: string) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name, accessCode }),
   });
-  const payload = (await response.json()) as { token?: string; user?: LabUser; error?: string };
+  const payload = await readJson<{ token?: string; user?: LabUser; error?: string }>(response);
   if (!response.ok || !payload.token || !payload.user) {
     throw new Error(payload.error || "Login failed");
   }
@@ -46,7 +53,7 @@ export async function login(name: string, accessCode: string) {
 
 export async function startUserSystemLogin(next = currentPath()) {
   const response = await fetch(`/api/auth/user-system/start?next=${encodeURIComponent(next)}`);
-  const payload = (await response.json()) as { url?: string; error?: string };
+  const payload = await readJson<{ url?: string; error?: string }>(response);
   if (!response.ok || !payload.url) {
     throw new Error(payload.error || "User System sign-in is not available");
   }
@@ -61,7 +68,7 @@ export async function completeUserSystemLogin(search: string) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const payload = (await response.json()) as { token?: string; user?: LabUser; next?: string; error?: string };
+  const payload = await readJson<{ token?: string; user?: LabUser; next?: string; error?: string }>(response);
   if (!response.ok || !payload.token || !payload.user) {
     throw new Error(payload.error || "User System sign-in failed");
   }
@@ -78,4 +85,16 @@ export async function fetchWithAuth(input: RequestInfo | URL, init: RequestInit 
 
 function currentPath() {
   return `${window.location.pathname}${window.location.search}`;
+}
+
+async function readJson<T extends Record<string, unknown>>(response: Response): Promise<T> {
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    return {} as T;
+  }
+  try {
+    return (await response.json()) as T;
+  } catch {
+    return {} as T;
+  }
 }

@@ -16,6 +16,10 @@ export async function loadWorkspaceRecords(): Promise<{ records: StoredAnalysisR
     if (!response.ok) {
       return { records: listAnalysisHistory(), source: "local" };
     }
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      return { records: listAnalysisHistory(), source: "local" };
+    }
     const payload = (await response.json()) as { records?: StoredAnalysisRecord[] };
     const records = payload.records || [];
     cacheRemoteRecords(records);
@@ -45,7 +49,7 @@ export async function deleteWorkspaceRecord(id: string, source: WorkspaceRecordS
       method: "DELETE",
     });
     if (!response.ok) {
-      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      const payload = (await readJson(response)) as { error?: string };
       throw new Error(payload.error || "Could not delete this analysis.");
     }
     removeCachedRecord(id);
@@ -54,6 +58,16 @@ export async function deleteWorkspaceRecord(id: string, source: WorkspaceRecordS
 
   deleteAnalysisRecord(id);
   removeCachedRecord(id);
+}
+
+async function readJson(response: Response) {
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) return {};
+  try {
+    return await response.json();
+  } catch {
+    return {};
+  }
 }
 
 export function clearWorkspaceRecordCache() {

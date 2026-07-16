@@ -1,5 +1,5 @@
 import { LogIn, X } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { startUserSystemLogin } from "../auth/client";
 import { useAnimatedPresence } from "../hooks/useAnimatedPresence";
 
@@ -12,6 +12,7 @@ interface AuthChoiceDialogProps {
 
 export function AuthChoiceDialog({ open, onClose, next = "/analyse", mode = "modal" }: AuthChoiceDialogProps) {
   const { mounted, state } = useAnimatedPresence(open, 180);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (mode !== "modal" || !mounted) return;
@@ -49,10 +50,20 @@ export function AuthChoiceDialog({ open, onClose, next = "/analyse", mode = "mod
           <strong>Continue with ChemVault User</strong>
           <p>Uploads, analysis history, downloads, and usage limits remain attached to your verified account.</p>
           <span>Files are not accepted until sign-in completes.</span>
-          <button className="button primary" type="button" onClick={() => void startUserSystemLogin(next)}>
+          <button
+            className="button primary"
+            type="button"
+            onClick={() => {
+              setError("");
+              void startUserSystemLogin(next).catch((caught) => {
+                setError(caught instanceof Error ? caught.message : "User System sign-in failed.");
+              });
+            }}
+          >
             <LogIn size={16} />
             Sign in
           </button>
+          {error && <p className="form-error">{error}</p>}
         </article>
       </div>
     </section>

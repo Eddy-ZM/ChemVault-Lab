@@ -374,7 +374,7 @@ code {
 
 .local-login-fallback summary {
   display: flex;
-  min-height: 34px;
+  min-height: 44px;
   align-items: center;
   gap: 7px;
   color: var(--muted);

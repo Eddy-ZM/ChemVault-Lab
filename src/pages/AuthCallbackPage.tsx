@@ -66,7 +66,18 @@ export function AuthCallbackPage() {
         <p>{message}</p>
         {status === "error" && (
           <div className="form-actions">
-            <button className="button primary" type="button" onClick={() => void startUserSystemLogin("/history")}>
+            <button
+              className="button primary"
+              type="button"
+              onClick={() => {
+                setStatus("working");
+                setMessage("Opening ChemVault User System.");
+                void startUserSystemLogin("/history").catch((caught) => {
+                  setStatus("error");
+                  setMessage(caught instanceof Error ? caught.message : "User System sign-in failed.");
+                });
+              }}
+            >
               <LogIn size={17} />
               Sign in again
             </button>

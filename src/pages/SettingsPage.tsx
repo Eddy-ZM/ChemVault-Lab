@@ -10,6 +10,7 @@ export function SettingsPage() {
   const [user, setUser] = useState<LabUser | null>(() => getStoredUser());
   const [confirmClear, setConfirmClear] = useState(false);
   const [confirmation, setConfirmation] = useState("");
+  const [authError, setAuthError] = useState("");
 
   useEffect(() => {
     const refresh = () => setUser(getStoredUser());
@@ -46,10 +47,20 @@ export function SettingsPage() {
           ) : (
             <>
               <p>Sign in with ChemVault User System to use server-side private history.</p>
-              <button className="button primary" type="button" onClick={() => void startUserSystemLogin("/dashboard")}>
+              <button
+                className="button primary"
+                type="button"
+                onClick={() => {
+                  setAuthError("");
+                  void startUserSystemLogin("/dashboard").catch((caught) => {
+                    setAuthError(caught instanceof Error ? caught.message : "User System sign-in failed.");
+                  });
+                }}
+              >
                 <KeyRound size={17} />
                 Sign in
               </button>
+              {authError && <p className="form-error">{authError}</p>}
             </>
           )}
         </article>
